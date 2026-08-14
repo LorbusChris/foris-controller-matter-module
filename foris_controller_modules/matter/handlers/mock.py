@@ -22,7 +22,7 @@ class MockMatterHandler(Handler, BaseMockHandler):
     live = True
     window = "closed"
     fabrics = 1
-    fabric_list = [{"FabricIndex": 1, "VendorId": 65521, "Label": "Demo controller"}]
+    fabric_list = [{"Index": 1, "VendorId": 65521, "Label": "Demo controller"}]
     thread_managed = True
     endpoints = [{"Endpoint": 0, "DeviceType": "Root Node"}]
     directory = []
@@ -73,7 +73,7 @@ class MockMatterHandler(Handler, BaseMockHandler):
 
     @logger_wrapper(logger)
     def remove_fabric(self, index):
-        remaining = [f for f in self.fabric_list if f.get("FabricIndex") != index]
+        remaining = [f for f in self.fabric_list if f.get("Index") != index]
         if len(remaining) == len(self.fabric_list):
             # The daemon validates the index; an unknown one changes nothing.
             return {"error": 1, "fabrics": self.fabrics}
