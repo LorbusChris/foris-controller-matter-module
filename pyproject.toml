@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "foris-controller-matter-module"
+dynamic = ["version"]
+description = "Matter network manager module for foris-controller"
+readme = "README.rst"
+license = { "file" = "LICENSE" }
+dependencies = [
+    "foris-controller",
+]
+
+[project.optional-dependencies]
+mqtt = [
+    "paho-mqtt",
+]
+tests = [
+    "pytest",
+    "ubus",
+    "paho-mqtt",
+    "foris-client",
+    "foris-controller-testtools",
+]
+ubus = [
+    "ubus",
+]
+
+[project.entry-points.foris_controller_modules]
+matter = "foris_controller_modules.matter"
+
+[tool.hatch.version]
+path = "foris_controller_matter_module/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+packages = [
+    "foris_controller_backends/",
+    "foris_controller_modules/",
+    "foris_controller_matter_module/",
+]
+include = [
+    "/foris_controller_modules",
+    "/foris_controller_backends",
+    "/foris_controller_matter_module",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "foris_controller_backends/",
+    "foris_controller_modules/",
+    "foris_controller_matter_module/",
+]
+include = [
+    "/foris_controller_modules",
+    "/foris_controller_backends",
+    "/foris_controller_matter_module",
+]

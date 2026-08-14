@@ -1,0 +1,179 @@
+{
+    "definitions": {
+        "matter_error": {"type": "integer", "minimum": 0},
+        "matter_window": {"enum": ["closed", "basic", "enhanced", "unknown"]},
+        "matter_fabric_index": {"type": "integer", "minimum": 1, "maximum": 254},
+        "matter_manual_code": {"type": "string", "pattern": "^[0-9]{11,21}$"},
+        "matter_qr_payload": {"type": "string", "pattern": "^MT:[0-9A-Z.-]+$"},
+        "matter_fabric": {"type": "object"},
+        "matter_endpoint": {"type": "object"},
+        "matter_directory_entry": {"type": "object"},
+        "matter_window_result": {
+            "type": "object",
+            "properties": {
+                "error": {"$ref": "#/definitions/matter_error"},
+                "window": {"$ref": "#/definitions/matter_window"}
+            },
+            "additionalProperties": false,
+            "required": ["error"]
+        }
+    },
+    "oneOf": [
+        {
+            "description": "Request the onboarding status",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["request"]},
+                "action": {"enum": ["get_onboarding"]}
+            },
+            "additionalProperties": false
+        },
+        {
+            "description": "Reply with the onboarding status. 'present' false means no Matter manager is installed here; 'present' with 'live' false means one is installed but its daemon is not answering. The pairing code and QR payload appear only while a commissioning window is open, because that is the only time they authenticate.",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["reply"]},
+                "action": {"enum": ["get_onboarding"]},
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "present": {"type": "boolean"},
+                        "live": {"type": "boolean"},
+                        "commissioned": {"type": "boolean"},
+                        "fabrics": {"type": "integer", "minimum": 0},
+                        "fabric_list": {
+                            "type": "array",
+                            "items": {"$ref": "#/definitions/matter_fabric"}
+                        },
+                        "thread_managed": {"type": "boolean"},
+                        "endpoints": {
+                            "type": "array",
+                            "items": {"$ref": "#/definitions/matter_endpoint"}
+                        },
+                        "directory": {
+                            "type": "array",
+                            "items": {"$ref": "#/definitions/matter_directory_entry"}
+                        },
+                        "wifi_share": {"oneOf": [{"type": "boolean"}, {"enum": [null]}]},
+                        "wifi_ssid": {"oneOf": [{"type": "string"}, {"enum": [null]}]},
+                        "window": {"$ref": "#/definitions/matter_window"},
+                        "manual_code": {"$ref": "#/definitions/matter_manual_code"},
+                        "qr": {"$ref": "#/definitions/matter_qr_payload"},
+                        "qr_svg": {"type": "string"}
+                    },
+                    "additionalProperties": false,
+                    "required": ["present"]
+                }
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Request to open a commissioning window",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["request"]},
+                "action": {"enum": ["open_window"]}
+            },
+            "additionalProperties": false
+        },
+        {
+            "description": "Reply to opening a commissioning window",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["reply"]},
+                "action": {"enum": ["open_window"]},
+                "data": {"$ref": "#/definitions/matter_window_result"}
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Request to close the commissioning window",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["request"]},
+                "action": {"enum": ["close_window"]}
+            },
+            "additionalProperties": false
+        },
+        {
+            "description": "Reply to closing the commissioning window",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["reply"]},
+                "action": {"enum": ["close_window"]},
+                "data": {"$ref": "#/definitions/matter_window_result"}
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Notification that the commissioning window changed",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["notification"]},
+                "action": {"enum": ["window"]},
+                "data": {
+                    "type": "object",
+                    "properties": {"window": {"$ref": "#/definitions/matter_window"}},
+                    "additionalProperties": false,
+                    "required": ["window"]
+                }
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Request to unpair a controller",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["request"]},
+                "action": {"enum": ["remove_fabric"]},
+                "data": {
+                    "type": "object",
+                    "properties": {"index": {"$ref": "#/definitions/matter_fabric_index"}},
+                    "additionalProperties": false,
+                    "required": ["index"]
+                }
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Reply to unpairing a controller",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["reply"]},
+                "action": {"enum": ["remove_fabric"]},
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "error": {"$ref": "#/definitions/matter_error"},
+                        "fabrics": {"type": "integer", "minimum": 0}
+                    },
+                    "additionalProperties": false,
+                    "required": ["error"]
+                }
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Notification that a controller was unpaired",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["notification"]},
+                "action": {"enum": ["remove_fabric"]},
+                "data": {
+                    "type": "object",
+                    "properties": {"index": {"$ref": "#/definitions/matter_fabric_index"}},
+                    "additionalProperties": false,
+                    "required": ["index"]
+                }
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        }
+    ]
+}
