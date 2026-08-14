@@ -64,7 +64,42 @@ class MatterModule(BaseModule):
             self.notify("remove_fabric", {"index": data["index"]})
         return res
 
+    def action_get_settings(self, data):
+        """Get the matter-netman configuration
+        :param data: supposed to be {}
+        :type data: dict
+        :returns: current settings
+        :rtype: dict
+        """
+        return self.handler.get_settings()
 
-@wrap_required_functions(["get_onboarding", "open_window", "close_window", "remove_fabric"])
+    def action_update_settings(self, data):
+        """Update the matter-netman configuration and restart the daemon
+
+        The init script bakes these options into the command line, so the
+        restart is part of the action: a reply of result=True means the
+        daemon the controllers now talk to runs with the settings written.
+
+        :param data: new settings
+        :type data: dict
+        :returns: {'result': True/False}
+        :rtype: dict
+        """
+        res = self.handler.update_settings(data)
+        if res:
+            self.notify("update_settings", data)
+        return {"result": res}
+
+
+@wrap_required_functions(
+    [
+        "get_onboarding",
+        "open_window",
+        "close_window",
+        "remove_fabric",
+        "get_settings",
+        "update_settings",
+    ]
+)
 class Handler(object):
     pass

@@ -16,6 +16,31 @@
             },
             "additionalProperties": false,
             "required": ["error"]
+        },
+        "matter_settings": {
+            "description": "What matter-netman reads from uci at startup. Optional strings are '' when unset, and writing '' deletes the option so the init script's own fallback stays the single source of the default.",
+            "type": "object",
+            "properties": {
+                "wifi_share": {"type": "boolean"},
+                "wifi_network": {"type": "string", "minLength": 1},
+                "wifi_iface": {"type": "string"},
+                "primary_interface": {"type": "string", "minLength": 1},
+                "vendor_name": {"type": "string", "maxLength": 32},
+                "product_name": {"type": "string", "maxLength": 32},
+                "ethernet_diagnostics": {"type": "boolean"},
+                "diagnostics_interface": {"type": "string"}
+            },
+            "additionalProperties": false,
+            "required": [
+                "wifi_share",
+                "wifi_network",
+                "wifi_iface",
+                "primary_interface",
+                "vendor_name",
+                "product_name",
+                "ethernet_diagnostics",
+                "diagnostics_interface"
+            ]
         }
     },
     "oneOf": [
@@ -171,6 +196,64 @@
                     "additionalProperties": false,
                     "required": ["index"]
                 }
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Request the matter-netman configuration",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["request"]},
+                "action": {"enum": ["get_settings"]}
+            },
+            "additionalProperties": false
+        },
+        {
+            "description": "Reply with the matter-netman configuration",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["reply"]},
+                "action": {"enum": ["get_settings"]},
+                "data": {"$ref": "#/definitions/matter_settings"}
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Request to update the matter-netman configuration. The daemon is restarted as part of the action, since the init script bakes these options into its command line.",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["request"]},
+                "action": {"enum": ["update_settings"]},
+                "data": {"$ref": "#/definitions/matter_settings"}
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Reply to a configuration update",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["reply"]},
+                "action": {"enum": ["update_settings"]},
+                "data": {
+                    "type": "object",
+                    "properties": {"result": {"type": "boolean"}},
+                    "additionalProperties": false,
+                    "required": ["result"]
+                }
+            },
+            "additionalProperties": false,
+            "required": ["data"]
+        },
+        {
+            "description": "Notification that the configuration changed",
+            "properties": {
+                "module": {"enum": ["matter"]},
+                "kind": {"enum": ["notification"]},
+                "action": {"enum": ["update_settings"]},
+                "data": {"$ref": "#/definitions/matter_settings"}
             },
             "additionalProperties": false,
             "required": ["data"]

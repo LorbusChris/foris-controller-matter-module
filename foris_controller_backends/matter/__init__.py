@@ -16,6 +16,14 @@ import typing
 
 from foris_controller_backends.cmdline import BaseCmdLine, inject_cmdline_root
 from foris_controller_backends.files import BaseFile, path_exists
+from foris_controller.exceptions import UciException
+from foris_controller_backends.services import OpenwrtServices
+from foris_controller_backends.uci import (
+    UciBackend,
+    get_option_named,
+    parse_bool,
+    store_bool,
+)
 from foris_controller_backends.ubus import UbusBackend
 
 logger = logging.getLogger(__name__)
@@ -146,6 +154,65 @@ class MatterState:
             "commissioned": self.files.commissioned(),
             "window": "unknown",
         }
+
+
+class MatterUci:
+    """The uci half: what matter-netman reads at startup.
+
+    Every option lives in the ``settings`` section of the ``matter`` package,
+    and the init script bakes them into the daemon's command line -- so a
+    change only takes effect through a service restart, which update_settings
+    performs itself rather than leaving the page to claim a change the daemon
+    has not seen.
+    """
+
+    #: option name -> (kind, default). Optional strings default to "" and are
+    #: deleted from uci when set to "", so the init script's own fallback
+    #: stays the single source of the default.
+    OPTIONS: typing.Dict[str, typing.Tuple[str, typing.Any]] = {
+        "wifi_share": ("bool", True),
+        "wifi_network": ("string", "lan"),
+        "wifi_iface": ("optional", ""),
+        "primary_interface": ("string", "br-lan"),
+        "vendor_name": ("optional", ""),
+        "product_name": ("optional", ""),
+        "ethernet_diagnostics": ("bool", True),
+        "diagnostics_interface": ("optional", ""),
+    }
+
+    def get_settings(self) -> dict:
+        with UciBackend() as backend:
+            data = backend.read("matter")
+        result = {}
+        for option, (kind, default) in self.OPTIONS.items():
+            if kind == "bool":
+                raw = get_option_named(
+                    data, "matter", "settings", option, store_bool(default)
+                )
+                result[option] = parse_bool(raw)
+            else:
+                result[option] = get_option_named(data, "matter", "settings", option, default)
+        return result
+
+    def update_settings(self, settings: dict) -> bool:
+        try:
+            with UciBackend() as backend:
+                for option, (kind, _default) in self.OPTIONS.items():
+                    if option not in settings:
+                        continue
+                    value = settings[option]
+                    if kind == "bool":
+                        backend.set_option("matter", "settings", option, store_bool(value))
+                    elif kind == "optional" and value == "":
+                        backend.del_option("matter", "settings", option, fail_on_error=False)
+                    else:
+                        backend.set_option("matter", "settings", option, value)
+        except UciException:
+            return False
+
+        with OpenwrtServices() as services:
+            services.restart("matter", fail_on_error=False)
+        return True
 
 
 class MatterCmds:

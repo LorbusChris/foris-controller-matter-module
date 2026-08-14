@@ -31,6 +31,17 @@ class MockMatterHandler(Handler, BaseMockHandler):
     manual_code = "34970112332"
     qr = "MT:Y.K9042C00KA0648G00"
 
+    settings = {
+        "wifi_share": True,
+        "wifi_network": "lan",
+        "wifi_iface": "",
+        "primary_interface": "br-lan",
+        "vendor_name": "",
+        "product_name": "",
+        "ethernet_diagnostics": True,
+        "diagnostics_interface": "",
+    }
+
     @logger_wrapper(logger)
     def get_onboarding(self):
         if not self.present:
@@ -80,3 +91,14 @@ class MockMatterHandler(Handler, BaseMockHandler):
         MockMatterHandler.fabric_list = remaining
         MockMatterHandler.fabrics = len(remaining)
         return {"error": 0, "fabrics": MockMatterHandler.fabrics}
+
+    @logger_wrapper(logger)
+    def get_settings(self):
+        return dict(self.settings)
+
+    @logger_wrapper(logger)
+    def update_settings(self, data):
+        for key in self.settings:
+            if key in data:
+                MockMatterHandler.settings[key] = data[key]
+        return True
